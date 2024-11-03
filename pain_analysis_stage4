@@ -1,0 +1,101 @@
+# pain_analysis_stage4.py
+
+import pandas as pd
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+import logging
+from datetime import datetime
+
+class FinalIntegration:
+    def __init__(self):
+        self.setup_logging()
+        self.pain_keywords = [
+            'pain', 'headache', 'cramp', 'ache', 
+            'soreness', 'discomfort', 'burning',
+            'throbbing', 'migraine', 'stiffness', 
+            'tenderness'
+        ]
+    
+    def setup_logging(self):
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            filename='pain_analysis_final.log'
+        )
+    
+    def integrate_results(self):
+        """Integrate results from all stages"""
+        results = {
+            'stage1': pd.read_excel('pain_analysis_stage1_results.xlsx'),
+            'stage2': pd.read_excel('co_occurrence_analysis.xlsx'),
+            'stage3': pd.read_excel('network_metrics.xlsx')
+        }
+        return results
+    
+    def create_summary_visualization(self, results):
+        """Create final summary visualization"""
+        plt.figure(figsize=(20, 15))
+        
+        # Pain term frequencies
+        plt.subplot(2, 2, 1)
+        sns.barplot(data=results['stage1'],
+                   x='term', y='frequency')
+        plt.xticks(rotation=45)
+        plt.title('Pain Term Frequencies')
+        
+        # Co-occurrence heatmap
+        plt.subplot(2, 2, 2)
+        sns.heatmap(results['stage2'],
+                   cmap='YlOrRd',
+                   annot=True,
+                   fmt='.2f')
+        plt.title('Term Co-occurrence Matrix')
+        
+        # Network metrics
+        plt.subplot(2, 2, 3)
+        sns.scatterplot(data=results['stage3'])
+        plt.title('Network Metrics')
+        
+        plt.tight_layout()
+        plt.savefig('final_summary.png', dpi=300, bbox_inches='tight')
+        plt.close()
+    
+    def generate_report(self, results):
+        """Generate final analysis report"""
+        report = {
+            'analysis_date': datetime.now().isoformat(),
+            'total_terms_analyzed': len(results['stage1']),
+            'significant_correlations': (results['stage2'] >= 0.5).sum().sum(),
+            'network_metrics': results['stage3'].describe().to_dict()
+        }
+        
+        # Save report
+        pd.DataFrame(report).to_excel('final_report.xlsx')
+        logging.info("Final report generated")
+        
+        return report
+
+def main():
+    integrator = FinalIntegration()
+    
+    try:
+        # Integrate all results
+        results = integrator.integrate_results()
+        
+        # Create visualizations
+        integrator.create_summary_visualization(results)
+        
+        # Generate final report
+        report = integrator.generate_report(results)
+        
+        logging.info("Final integration completed successfully")
+        
+    except Exception as e:
+        logging.error(f"Final integration failed: {e}")
+        raise
+
+if __name__ == "__main__":
+    main()
