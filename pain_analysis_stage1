@@ -1,0 +1,86 @@
+# pain_analysis_stage1.py
+
+import pandas as pd
+import numpy as np
+from nltk import word_tokenize
+import nltk
+from collections import defaultdict
+import logging
+
+class InitialPainAnalysis:
+    def __init__(self):
+        self.setup_logging()
+        self.initialize_nlp()
+        
+        # Define pain-related terms
+        self.pain_keywords = [
+            'pain', 'headache', 'cramp', 'ache', 
+            'soreness', 'discomfort', 'burning',
+            'throbbing', 'migraine', 'stiffness', 
+            'tenderness'
+        ]
+    
+    def setup_logging(self):
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            filename='pain_analysis_stage1.log'
+        )
+    
+    def initialize_nlp(self):
+        nltk.download('punkt')
+        nltk.download('stopwords')
+        self.stop_words = set(nltk.corpus.stopwords.words('english'))
+    
+    def load_data(self, file_path):
+        """Load and preprocess the data"""
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+                data = file.read()
+            return data
+        except Exception as e:
+            logging.error(f"Data loading error: {e}")
+            raise
+    
+    def preprocess_text(self, text):
+        """Basic text preprocessing"""
+        text = text.lower()
+        tokens = word_tokenize(text)
+        tokens = [t for t in tokens if t not in self.stop_words]
+        return ' '.join(tokens)
+    
+    def extract_pain_mentions(self, text):
+        """Extract mentions of pain-related terms"""
+        pain_mentions = defaultdict(int)
+        for keyword in self.pain_keywords:
+            if keyword in text.lower():
+                pain_mentions[keyword] += 1
+        return dict(pain_mentions)
+    
+    def save_results(self, results, output_file):
+        """Save analysis results"""
+        pd.DataFrame(results).to_excel(output_file, index=False)
+        logging.info(f"Results saved to {output_file}")
+
+def main():
+    analyzer = InitialPainAnalysis()
+    
+    # データ読み込みと分析
+    try:
+        data = analyzer.load_data('input_text.txt')
+        processed_text = analyzer.preprocess_text(data)
+        pain_mentions = analyzer.extract_pain_mentions(processed_text)
+        
+        # 結果を保存
+        analyzer.save_results(
+            {'term': list(pain_mentions.keys()),
+             'frequency': list(pain_mentions.values())},
+            'pain_analysis_stage1_results.xlsx'
+        )
+        
+    except Exception as e:
+        logging.error(f"Analysis failed: {e}")
+        raise
+
+if __name__ == "__main__":
+    main()
