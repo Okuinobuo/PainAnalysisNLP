@@ -1,0 +1,99 @@
+# pain_analysis_stage3.py
+
+import networkx as nx
+import pandas as pd
+import matplotlib.pyplot as plt
+import logging
+from scipy import stats
+
+class NetworkAnalysis:
+    def __init__(self):
+        self.setup_logging()
+        self.min_correlation = 0.5
+        
+    def setup_logging(self):
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            filename='pain_analysis_stage3.log'
+        )
+    
+    def create_network(self, correlation_matrix):
+        """Create network from correlation matrix"""
+        G = nx.Graph()
+        
+        for i in range(len(correlation_matrix)):
+            for j in range(i + 1, len(correlation_matrix)):
+                correlation = correlation_matrix.iloc[i, j]
+                if abs(correlation) >= self.min_correlation:
+                    term1 = correlation_matrix.index[i]
+                    term2 = correlation_matrix.columns[j]
+                    G.add_edge(term1, term2, weight=abs(correlation))
+        
+        return G
+    
+    def analyze_network(self, G):
+        """Calculate network metrics"""
+        metrics = {
+            'centrality': nx.degree_centrality(G),
+            'betweenness': nx.betweenness_centrality(G),
+            'clustering': nx.clustering(G)
+        }
+        return metrics
+    
+    def visualize_network(self, G, output_file):
+        """Create network visualization"""
+        plt.figure(figsize=(15, 15))
+        
+        # Calculate layout
+        pos = nx.spring_layout(G, k=2, seed=42)
+        
+        # Draw nodes
+        nx.draw_networkx_nodes(G, pos,
+                             node_color='lightblue',
+                             node_size=1000)
+        
+        # Draw edges
+        edge_weights = [G[u][v]['weight'] * 2 for u, v in G.edges()]
+        nx.draw_networkx_edges(G, pos,
+                             width=edge_weights,
+                             alpha=0.5)
+        
+        # Add labels
+        nx.draw_networkx_labels(G, pos, font_size=10)
+        
+        plt.title("Pain Term Network Analysis")
+        plt.axis('off')
+        
+        # Save visualization
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        logging.info(f"Network visualization saved to {output_file}")
+    
+    def save_metrics(self, metrics, output_file):
+        """Save network metrics"""
+        pd.DataFrame(metrics).to_excel(output_file)
+        logging.info(f"Network metrics saved to {output_file}")
+
+def main():
+    analyzer = NetworkAnalysis()
+    
+    try:
+        # Load co-occurrence matrix
+        matrix = pd.read_excel('co_occurrence_analysis.xlsx')
+        
+        # Create and analyze network
+        G = analyzer.create_network(matrix)
+        metrics = analyzer.analyze_network(G)
+        
+        # Save results
+        analyzer.save_metrics(metrics, 'network_metrics.xlsx')
+        analyzer.visualize_network(G, 'network_visualization.png')
+        
+    except Exception as e:
+        logging.error(f"Network analysis failed: {e}")
+        raise
+
+if __name__ == "__main__":
+    main()
