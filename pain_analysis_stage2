@@ -1,0 +1,90 @@
+# pain_analysis_stage2.py
+
+import pandas as pd
+import numpy as np
+from collections import defaultdict
+from itertools import combinations
+import logging
+
+class CooccurrenceAnalysis:
+    def __init__(self):
+        self.setup_logging()
+        self.window_size = 5
+    
+    def setup_logging(self):
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            filename='pain_analysis_stage2.log'
+        )
+    
+    def analyze_cooccurrence(self, texts, min_count=5):
+        """Analyze co-occurrence of terms"""
+        co_occurrences = defaultdict(int)
+        
+        for text in texts:
+            words = text.split()
+            for i, word in enumerate(words):
+                # Define window range
+                start = max(0, i - self.window_size)
+                end = min(len(words), i + self.window_size + 1)
+                
+                # Count co-occurrences within window
+                for j in range(start, end):
+                    if i != j:
+                        pair = tuple(sorted([words[i], words[j]]))
+                        co_occurrences[pair] += 1
+        
+        # Filter by minimum count
+        filtered_cooccurrences = {
+            k: v for k, v in co_occurrences.items() 
+            if v >= min_count
+        }
+        
+        return filtered_cooccurrences
+    
+    def create_cooccurrence_matrix(self, co_occurrences):
+        """Create co-occurrence matrix"""
+        # Get unique terms
+        terms = set()
+        for pair in co_occurrences.keys():
+            terms.update(pair)
+        terms = sorted(list(terms))
+        
+        # Create matrix
+        matrix = pd.DataFrame(0, 
+                            index=terms,
+                            columns=terms)
+        
+        # Fill matrix
+        for (term1, term2), count in co_occurrences.items():
+            matrix.loc[term1, term2] = count
+            matrix.loc[term2, term1] = count
+        
+        return matrix
+    
+    def save_results(self, matrix, output_file):
+        """Save co-occurrence matrix"""
+        matrix.to_excel(output_file)
+        logging.info(f"Co-occurrence matrix saved to {output_file}")
+
+def main():
+    analyzer = CooccurrenceAnalysis()
+    
+    try:
+        # Load preprocessed texts from stage 1
+        texts = pd.read_excel('pain_analysis_stage1_results.xlsx')
+        
+        # Analyze co-occurrences
+        co_occurrences = analyzer.analyze_cooccurrence(texts['text'])
+        matrix = analyzer.create_cooccurrence_matrix(co_occurrences)
+        
+        # Save results
+        analyzer.save_results(matrix, 'co_occurrence_analysis.xlsx')
+        
+    except Exception as e:
+        logging.error(f"Co-occurrence analysis failed: {e}")
+        raise
+
+if __name__ == "__main__":
+    main()
