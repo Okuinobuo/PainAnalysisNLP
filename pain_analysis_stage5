@@ -1,0 +1,39 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# 中心性の標準偏差データを読み込む
+degree_centrality_std = 0.047924
+betweenness_centrality_std = 0.054515
+eigenvector_centrality_std = 0.040491
+
+# ノードリストとその中心性指標を含むデータを用意
+nodes = ['pain', 'headache', 'burning', 'discomfort', 'ache']
+degree_centrality = [0.821429, 0.107143, 0.181818, 0.048701, 0.019481]
+betweenness_centrality = [0.907931, 0.161610, 0.247061, 0.051777, 0.007960]
+eigenvector_centrality = [0.695893, 0.054706, 0.109614, 0.023790, 0.013021]
+
+# 標準偏差を配列として用意
+degree_std_devs = [degree_centrality_std] * len(nodes)
+betweenness_std_devs = [betweenness_centrality_std] * len(nodes)
+eigenvector_std_devs = [eigenvector_centrality_std] * len(nodes)
+
+# 散布図をプロット
+fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+
+# 各軸にプロット
+axes[0].errorbar(nodes, degree_centrality, yerr=degree_std_devs, fmt='o', color='blue', label='Degree Centrality', markersize=10)
+axes[1].errorbar(nodes, betweenness_centrality, yerr=betweenness_std_devs, fmt='o', color='green', label='Betweenness Centrality', markersize=10)
+axes[2].errorbar(nodes, eigenvector_centrality, yerr=eigenvector_std_devs, fmt='o', color='red', label='Eigenvector Centrality', markersize=10)
+
+# 各軸のタイトルとラベル
+axes[0].set_title('Degree Centrality with Std Dev')
+axes[0].set_ylabel('Centrality Value')
+axes[1].set_title('Betweenness Centrality with Std Dev')
+axes[2].set_title('Eigenvector Centrality with Std Dev')
+for ax in axes:
+    ax.set_xlabel('Nodes')
+    ax.set_xticks(np.arange(len(nodes)))
+    ax.set_xticklabels(nodes, rotation=45, ha='right')
+
+plt.tight_layout()
+plt.show()
